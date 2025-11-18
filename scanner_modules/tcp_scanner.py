@@ -1,24 +1,15 @@
-# Contents of /nmaplite/nmaplite/tests/test_cli.py
+import socket
 
-import unittest
-from nmaplite.cli import main
-
-class TestCLI(unittest.TestCase):
-
-    def test_help_command(self):
-        """Test the help command output."""
-        result = main(['--help'])
-        self.assertIn('usage:', result)
-
-    def test_scan_command(self):
-        """Test the scan command with a valid target."""
-        result = main(['scan', '127.0.0.1'])
-        self.assertEqual(result.exit_code, 0)
-
-    def test_invalid_command(self):
-        """Test the command with an invalid option."""
-        result = main(['invalid_command'])
-        self.assertNotEqual(result.exit_code, 0)
-
-if __name__ == '__main__':
-    unittest.main()
+def tcp_connect_scan(ip: str, port: int, timeout: float) -> bool:
+    """Return True if port is open using TCP connect_ex, False otherwise."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(timeout)
+    try:
+        return s.connect_ex((ip, port)) == 0
+    except Exception:
+        return False
+    finally:
+        try:
+            s.close()
+        except Exception:
+            pass

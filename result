@@ -1,0 +1,33 @@
+{
+  "scan_info": {
+    "start_time": "2025-11-18T12:15:12.527957",
+    "end_time": "2025-11-18T12:15:32.640307",
+    "duration_seconds": 20.11235
+  },
+  "results": [
+    {
+      "port": 80,
+      "state": "open",
+      "service": "http",
+      "banner": null
+    },
+    {
+      "port": 135,
+      "state": "open",
+      "service": "epmap",
+      "banner": null
+    },
+    {
+      "port": 443,
+      "state": "open",
+      "service": "https",
+      "banner": null
+    },
+    {
+      "port": 445,
+      "state": "open",
+      "service": "microsoft-ds",
+      "banner": null
+    }
+  ]
+}

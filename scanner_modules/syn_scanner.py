@@ -1,27 +1,29 @@
-import unittest
-from nmaplite.scanner import Scanner
+"""
+Optional SYN scan using Scapy (requires root/admin privileges).
+Only used if you want to experiment with half-open scans.
+"""
 
-class TestScanner(unittest.TestCase):
+from typing import Literal, Optional
 
-    def setUp(self):
-        self.scanner = Scanner()
+def syn_scan_port(target: str, port: int, timeout: float = 1.0) -> Optional[Literal["open","closed","filtered"]]:
+    try:
+        from scapy.all import IP, TCP, sr1, conf  # type: ignore
+        conf.verb = 0
+    except Exception:
+        return None  # Scapy not available
 
-    def test_tcp_scan(self):
-        result = self.scanner.tcp_scan('127.0.0.1', [80, 443])
-        self.assertIsInstance(result, dict)
-        self.assertIn(80, result)
-        self.assertIn(443, result)
-
-    def test_syn_scan(self):
-        result = self.scanner.syn_scan('127.0.0.1', [22, 80])
-        self.assertIsInstance(result, dict)
-        self.assertIn(22, result)
-        self.assertIn(80, result)
-
-    def test_service_detection(self):
-        result = self.scanner.service_detection('127.0.0.1', [80])
-        self.assertIsInstance(result, dict)
-        self.assertIn(80, result)
-
-if __name__ == '__main__':
-    unittest.main()
+    try:
+        resp = sr1(IP(dst=target)/TCP(dport=port, flags="S"), timeout=timeout)
+        if resp is None:
+            return "filtered"
+        if resp.haslayer(TCP):
+            flags = resp.getlayer(TCP).flags
+            if flags == 0x12:  # SYN+ACK
+                # Send RST to avoid full handshake
+                _ = sr1(IP(dst=target)/TCP(dport=port, flags="R", seq=resp.ack), timeout=timeout)
+                return "open"
+            if flags == 0x14:  # RST+ACK
+                return "closed"
+        return "filtered"
+    except Exception:
+        return None
