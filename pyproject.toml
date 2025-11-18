@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "nmaplite"
+version = "0.1.0"
+description = "A lightweight network scanner application."
+authors = ["Your Name <youremail@example.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/yourusername/nmaplite"
+repository = "https://github.com/yourusername/nmaplite"
+keywords = ["network", "scanner", "nmap", "python"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+scapy = "^2.4.5"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
