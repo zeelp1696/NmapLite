@@ -38,24 +38,19 @@ def resolve_target(target: str) -> Optional[str]:
     except socket.gaierror:
         return None
 
-def print_results(open_results: List[Dict], started: datetime, finished: datetime) -> None:
+def print_results(results: List[Dict], started: datetime, finished: datetime) -> None:
     duration = (finished - started).total_seconds()
-    if not open_results:
-        print("\nNo open TCP ports found.")
-        print(f"Completed in {duration:.2f} seconds.")
-        return
-    print("\nPORT       STATE   SERVICE             BANNER")
+    print("\nPORT       STATE      SERVICE             BANNER")
     print("-" * 72)
-    for r in open_results:
+    for r in sorted(results, key=lambda x: x["port"]):
         port_str = f"{r['port']}/tcp"
-        state = r["state"]
-        svc = r["service"] or "unknown"
-        banner = (r["banner"][:44] + "...") if r["banner"] and len(r["banner"]) > 47 else (r["banner"] or "")
-        print(f"{port_str:<10} {state:<6}  {svc:<18} {banner}")
-    print(f"\nFound {len(open_results)} open ports")
-    print(f"Completed in {duration:.2f} seconds")
+        svc = r.get("service") or "unknown"
+        banner = (r.get("banner")[:44] + "...") if r.get("banner") and len(r.get("banner")) > 47 else (r.get("banner") or "")
+        print(f"{port_str:<10} {r['state']:<9} {svc:<18} {banner}")
+    opens = sum(1 for r in results if r["state"] == "open")
+    print(f"\nFound {opens} open ports; scanned {len(results)} ports in {duration:.2f} seconds")
 
-def save_results(open_results: List[Dict], filename: str, fmt: str,
+def save_results(results: List[Dict], filename: str, fmt: str,
                  started: datetime, finished: datetime) -> None:
     meta = {
         "start_time": started.isoformat(),
@@ -63,23 +58,23 @@ def save_results(open_results: List[Dict], filename: str, fmt: str,
         "duration_seconds": (finished - started).total_seconds()
     }
     if fmt == "json":
-        out = {"scan_info": meta, "results": open_results}
+        out = {"scan_info": meta, "results": results}
         with open(filename, "w", encoding="utf-8") as f:
             json.dump(out, f, indent=2)
     elif fmt == "csv":
         with open(filename, "w", newline="", encoding="utf-8") as f:
             w = csv.DictWriter(f, fieldnames=["port", "state", "service", "banner"])
             w.writeheader()
-            w.writerows(open_results)
+            w.writerows(results)
     elif fmt == "txt":
         with open(filename, "w", encoding="utf-8") as f:
             f.write(f"Scan Results\n")
             f.write(f"Started:  {meta['start_time']}\n")
             f.write(f"Finished: {meta['end_time']}\n")
             f.write(f"Duration: {meta['duration_seconds']:.2f}s\n\n")
-            for r in open_results:
-                f.write(f"Port {r['port']}/tcp: {r['state']}  service={r['service'] or 'unknown'}\n")
-                if r["banner"]:
+            for r in results:
+                f.write(f"Port {r['port']}/tcp: {r['state']}  service={r.get('service') or 'unknown'}\n")
+                if r.get("banner"):
                     f.write(f"  Banner: {r['banner']}\n")
     else:
         raise ValueError("Unknown format")
